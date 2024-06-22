@@ -4,6 +4,7 @@ import com.ccdev.bookingmicroservice.Client.StockClient;
 import com.ccdev.bookingmicroservice.Repository.OrderRepository;
 import com.ccdev.bookingmicroservice.dto.OrderDto;
 import com.ccdev.bookingmicroservice.entity.OrderEntity;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import org.hibernate.query.Order;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,7 +23,7 @@ public class BookingController {
     @Autowired
     private StockClient stockClient;
 
-
+    @CircuitBreaker(name = "ProductStockCircuitBreaker", fallbackMethod = "fallbackToStockService")
     public String SaveOrder(@RequestBody OrderDto orderDto) {
 
         boolean inStock = orderDto.getOrderItems().stream().allMatch(orderItem -> stockClient.isStocked(orderItem.getCode()));
@@ -38,5 +39,9 @@ public class BookingController {
         }
 
         return "order cannot be saved";
+    }
+
+    private String fallbackToStockService(){
+        return "Something went wrong, please try again later";
     }
 }
